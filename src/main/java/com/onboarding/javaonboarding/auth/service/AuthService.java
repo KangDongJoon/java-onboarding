@@ -1,19 +1,19 @@
 package com.onboarding.javaonboarding.auth.service;
 
-import com.onboarding.javaonboarding.auth.dto.AuthSignRequest;
-import com.onboarding.javaonboarding.auth.dto.AuthSignResponse;
-import com.onboarding.javaonboarding.auth.dto.AuthSignupRequest;
-import com.onboarding.javaonboarding.auth.dto.AuthSignupResponse;
+import com.onboarding.javaonboarding.auth.dto.*;
 import com.onboarding.javaonboarding.exception.PasswordIncorrect;
 import com.onboarding.javaonboarding.exception.UserNotFound;
 import com.onboarding.javaonboarding.jwt.JwtUtil;
 import com.onboarding.javaonboarding.user.entity.User;
 import com.onboarding.javaonboarding.user.enums.UserRole;
 import com.onboarding.javaonboarding.user.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -70,14 +70,50 @@ public class AuthService {
             throw new PasswordIncorrect();
         }
 
-        // 토큰 생성
-        String token = jwtUtil.createToken(
+        // Access Token 생성
+        String accessToken = jwtUtil.accessToken(
+                user.getId(),
+                user.getUsername(),
+                user.getUserRole()
+        );
+
+        // Refresh Token 생성
+        String refreshToken = jwtUtil.refreshToken(
                 user.getId(),
                 user.getUsername(),
                 user.getUserRole()
         );
 
         // 토근 DTO에 담아 반환
-        return new AuthSignResponse(token);
+        return new AuthSignResponse(accessToken, refreshToken);
     }
+
+    @Transactional
+    public AuthRefreshAccessResponse refreshAccessToken(String refreshToken) {
+        String token = jwtUtil.substringToken(refreshToken); // Bearer prefix 제거
+
+        // Refresh Token 유효성 검사
+        Claims claims = jwtUtil.extractClaims(token);
+        Date expiration = claims.getExpiration();
+        Date now = new Date();
+
+        if (expiration.before(now)) {
+            throw new RuntimeException("Refresh Token이 만료되었습니다.");
+        }
+
+        // 새로운 Access Token 발급
+        Long userId = Long.valueOf(claims.getSubject());
+        String username = claims.get("username", String.class);
+        String userRole = claims.get("userRole", String.class);
+
+        String refreshAccessToken = jwtUtil.accessToken(
+                userId,
+                username,
+                UserRole.valueOf(userRole)
+        );
+
+        // 새로운 Access Token 반환
+        return new AuthRefreshAccessResponse(refreshAccessToken);
+    }
+
 }

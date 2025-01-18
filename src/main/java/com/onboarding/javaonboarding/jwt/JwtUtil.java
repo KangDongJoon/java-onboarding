@@ -22,7 +22,8 @@ import java.util.NoSuchElementException;
 public class JwtUtil {
 
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final long TOKEN_TIME = 60 * 60 * 1000L; // 60분
+    private static final long TOKEN_TIME = 30 * 1000L; // 30초
+    private static final long REFRESH_TOKEN_TIME = 24 * 60 * 60 * 1000L; // 1일
 
     @Value("${JWT_KEY}")
     private String secretKey;
@@ -35,7 +36,8 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    public String createToken(Long userId, String username, UserRole userRole) {
+    // Access Token 생성
+    public String accessToken(Long userId, String username, UserRole userRole) {
         Date date = new Date();
 
         return BEARER_PREFIX +
@@ -46,6 +48,21 @@ public class JwtUtil {
                         .setExpiration(new Date(date.getTime() + TOKEN_TIME))
                         .setIssuedAt(date) // 발급일
                         .signWith(key, signatureAlgorithm) // 암호화 알고리즘
+                        .compact();
+    }
+
+    // Refresh Token 생성
+    public String refreshToken(Long userId, String username, UserRole userRole) {
+        Date date = new Date();
+
+        return BEARER_PREFIX +
+                Jwts.builder()
+                        .setSubject(String.valueOf(userId))
+                        .claim("username", username)
+                        .claim("userRole", userRole.name())
+                        .setExpiration(new Date(date.getTime() + REFRESH_TOKEN_TIME))
+                        .setIssuedAt(date)
+                        .signWith(key, signatureAlgorithm)
                         .compact();
     }
 
