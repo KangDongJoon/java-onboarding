@@ -8,6 +8,7 @@ class JavaOnboardingApplicationTests {
 
     @Test
     void contextLoads() {
+        System.out.println("build");
     }
 
 }
