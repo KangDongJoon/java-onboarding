@@ -1,6 +1,5 @@
 package com.onboarding.javaonboarding.jwt;
 
-import com.onboarding.javaonboarding.user.enums.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +40,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**") // Swagger UI 관련 경로 허용
+                        .permitAll()  // 인증 없이 접근 허용
                         .anyRequest().authenticated()
                 )
                 .build();

@@ -41,6 +41,9 @@ dependencies {
 
     // Java 유효성 검증 API
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 스웨거
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 }
 
 tasks.named('test') {
